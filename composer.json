@@ -1,0 +1,47 @@
+{
+    "name": "antaresbr/laravel-socket",
+    "description": "Laravel API for antaresbr/socket composer package",
+    "homepage": "https://github.com/antaresbr/laravel-socket",
+    "keywords": [
+        "php",
+        "laravel",
+        "socket"
+    ],
+    "authors": [
+        {
+            "name": "Eduardo Guerra",
+            "email": "eduardo.antares@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "license": "MIT",
+    "require": {
+        "php": ">=7",
+        "antaresbr/arrayhandler": "*",
+        "antaresbr/laravel-http": "*",
+        "antaresbr/stringhandler": "*"
+    },
+    "autoload": {
+        "files": [
+            "support/helpers.php"
+        ],
+        "psr-4": {
+            "Antares\\Socket\\": "src/"
+        }
+    },
+    "require-dev": {
+        "orchestra/testbench": "^6"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Antares\\Socket\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Antares\\Socket\\Providers\\SocketServiceProvider"
+            ]
+        }
+    }
+}
