@@ -18,7 +18,6 @@
     "require": {
         "php": ">=7",
         "antaresbr/arrayhandler": "*",
-        "antaresbr/laravel-http": "*",
         "antaresbr/stringhandler": "*"
     },
     "autoload": {
