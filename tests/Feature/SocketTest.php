@@ -28,6 +28,9 @@ class SocketTest extends TestCase
     {
         $socket = new Socket();
 
+        $socket->status('new status');
+        $this->assertEquals('new status', $socket->get('status'));
+
         $socket->set('title', 'New socket title');
         $this->assertEquals('New socket title', $socket->get('title'));
 
@@ -38,6 +41,28 @@ class SocketTest extends TestCase
         $socket->set('result.files', ['file-a', 'file-b', 'file-c']);
         $this->assertIsArray($socket->get('result.files'));
         $this->assertCount(3, $socket->get('result.files'));
+    }
+
+    /** @test */
+    public function socket_safe_data_manipulation()
+    {
+        $socket = new Socket();
+
+        Socket::socketStatus(null, 'new status');
+        $this->assertEquals('undefined', $socket->get('status'));
+
+        Socket::socketStatus($socket, 'new status');
+        $this->assertEquals('new status', $socket->get('status'));
+
+        Socket::socketStart(null, 'new title', 'new message');
+        $this->assertNull($socket->get('title'));
+        $this->assertNull($socket->get('message'));
+        $this->assertNull($socket->get('started'));
+
+        Socket::socketStart($socket, 'new title', 'new message');
+        $this->assertEquals('new title', $socket->get('title'));
+        $this->assertEquals('new message', $socket->get('message'));
+        $this->assertNotNull($socket->get('started'));
     }
 
     protected function makedSocket()

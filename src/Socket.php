@@ -198,6 +198,19 @@ class Socket
     }
 
     /**
+     * Define this socket status
+     *
+     * @param string $value
+     * @param boolean $save
+     * @return static
+     */
+    public function status($value, $save = false): static
+    {
+        $this->set('status', $value, $save);
+        return $this;
+    }
+
+    /**
      * Define this socket to running state
      *
      * @param boolean $save
@@ -206,7 +219,7 @@ class Socket
     public function start($save = false): static
     {
         $this->set('started', Carbon::now()->format('Y-m-d H:i:s e'));
-        $this->set('status', 'running', $save);
+        $this->status('running', $save);
         return $this;
     }
 
@@ -219,13 +232,26 @@ class Socket
     public function finish($save = false): static
     {
         $this->set('finished', Carbon::now()->format('Y-m-d H:i:s e'));
-        $this->set('status', 'finished', $save);
+        $this->status('finished', $save);
         return $this;
     }
 
-    //-------------------------
-    //-- Socket manipulation --
-    //-------------------------
+    //------------------------------
+    //-- Safe socket manipulation --
+    //------------------------------
+
+    /**
+     * Define socket status
+     *
+     * @param Socket $socket
+     * @param string $status
+     */
+    public static function socketStatus($socket, $status)
+    {
+        if ($socket) {
+            $socket->status($status, true);
+        }
+    }
 
     /**
      * Start a socket with a title and message.
@@ -289,7 +315,7 @@ class Socket
         if ($socket) {
             $socket->set('confirmation.enabled', true);
             $socket->set('confirmation.message', $message);
-            $socket->set('status', 'wait confirmation', true);
+            $socket->status('waiting confirmation', true);
         }
     }
 

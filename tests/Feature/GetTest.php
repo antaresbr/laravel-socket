@@ -1,6 +1,7 @@
 <?php
 namespace Antares\Socket\Tests\Feature;
 
+use Antares\Socket\Socket;
 use Antares\Socket\Tests\TestCase;
 use Illuminate\Foundation\Testing\WithoutMiddleware;
 
@@ -15,27 +16,23 @@ class GetTest extends TestCase
         $response->assertStatus(404);
     }
 
-    // /** @test */
-    // public function get_successful()
-    // {
-    //     $response = $this->get(config('socket.route.prefix.api') . '/get/fruits');
-    //     $response->assertStatus(200);
+    /** @test */
+    public function get_successful()
+    {
+        $socket = Socket::make([
+            'id' => 'sub:maked_socket',
+            'status' => 'new',
+            'title' => 'Maked socket',
+            'progress' => [
+                'enabled' => true,
+                'maximum' => 10,
+            ],
+        ]);
 
-    //     $json = $response->json();
-    //     $this->assertArrayHasKey('status', $json);
-    //     $this->assertEquals('successful', $json['status']);
-    //     $this->assertArrayHasKey('data', $json);
-    //     $this->assertIsArray($json['data']);
+        $response = $this->get(config('socket.route.prefix.api') . '/get/' . $socket->get('id'));
+        $response->assertStatus(200);
 
-    //     $this->assertArrayHasKey('successful', $json['data']);
-    //     $this->assertIsArray($json['data']['successful']);
-    //     $this->assertCount(1, $json['data']['successful']);
-    //     $this->assertArrayHasKey('fruits', $json['data']['successful']);
-    //     $this->assertIsArray($json['data']['successful']['fruits']);
-    //     $this->assertCount(4, $json['data']['successful']['fruits']);
-
-    //     $this->assertArrayHasKey('error', $json['data']);
-    //     $this->assertIsArray($json['data']['error']);
-    //     $this->assertEmpty($json['data']['error']);
-    // }
+        $json = json_encode($response->json());
+        $this->assertEquals(json_encode($socket->data()), $json);
+    }
 }
