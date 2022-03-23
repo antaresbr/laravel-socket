@@ -62,7 +62,7 @@ class Socket
     public function __construct($prefix = null, $id = null)
     {
         $now = Carbon::now(config('app.timezone'));
-        $id = $id ?: $now->format('Y-m-d') . '_' . $now->format('H\hi\ms\s') . '_' . static::randomStr(16);
+        $id = $id ?: $now->format('Y-m-d') . '_' . $now->format('H\hi\ms\s') . '_' . static::randomStr(config('socket.randomId', 32));
         if ($prefix) {
             $id = $prefix . ':' . $id;
         }

@@ -10,4 +10,5 @@ return [
         'api' => config('auth.defaults.guard'),
     ],
     'data' => storage_path('app' . DIRECTORY_SEPARATOR . 'socket'),
+    'randomId' => 32,
 ];
