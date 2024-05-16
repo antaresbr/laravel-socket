@@ -99,6 +99,8 @@ class SocketTest extends TestCase
         $socket = Socket::createFromId('sub:maked_socket');
         $this->assertInstanceOf(Socket::class, $socket);
         $this->assertEquals('sub:maked_socket', $socket->get('id'));
+        //-- assure created is the same
+        $socket->set('created', $this->makedSocket()->get('created'));
         $this->assertEquals(json_encode($this->makedSocket()->data()), json_encode($socket->data()));
     }
 }

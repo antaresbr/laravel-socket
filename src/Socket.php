@@ -1,7 +1,7 @@
 <?php
 namespace Antares\Socket;
 
-use Antares\Support\Arr;
+use Antares\Foundation\Arr;
 use Carbon\Carbon;
 
 class Socket
@@ -71,7 +71,7 @@ class Socket
             'id' => $id,
             'user' => null,
             'status' => 'undefined',
-            'created' => $now->format('Y-m-d H:i:s e'),
+            'created' => $now->format(config('socket.date_format')),
             'started' => null,
             'finished' => null,
             'title' => null,
@@ -181,6 +181,17 @@ class Socket
     }
 
     /**
+     * Refresh data
+     *
+     * @return static
+     */
+    public function refresh(): static
+    {
+        $this->loadFromId($this->get('id'));
+        return $this;
+    }
+
+    /**
      * Save current object to file
      *
      * @return static
@@ -218,7 +229,7 @@ class Socket
      */
     public function start($save = false): static
     {
-        $this->set('started', Carbon::now()->format('Y-m-d H:i:s e'));
+        $this->set('started', Carbon::now()->format(config('socket.date_format')));
         $this->status('running', $save);
         return $this;
     }
@@ -231,7 +242,7 @@ class Socket
      */
     public function finish($save = false): static
     {
-        $this->set('finished', Carbon::now()->format('Y-m-d H:i:s e'));
+        $this->set('finished', Carbon::now()->format(config('socket.date_format')));
         $this->status('finished', $save);
         return $this;
     }
@@ -245,12 +256,14 @@ class Socket
      *
      * @param Socket $socket
      * @param string $status
+     * @return static
      */
     public static function socketStatus($socket, $status)
     {
         if ($socket) {
             $socket->status($status, true);
         }
+        return $socket;
     }
 
     /**
@@ -259,6 +272,7 @@ class Socket
      * @param Socket $socket
      * @param string $title
      * @param string $message
+     * @return static
      */
     public static function socketStart($socket, $title, $message)
     {
@@ -267,6 +281,7 @@ class Socket
             $socket->set('message', $message);
             $socket->start(true);
         }
+        return $socket;
     }
 
     /**
@@ -276,6 +291,7 @@ class Socket
      * @param string $message
      * @param array $files
      * @param array $data
+     * @return static
      */
     public static function socketFinish($socket, $message, $files = null, $data = null)
     {
@@ -285,6 +301,7 @@ class Socket
             $socket->set('result.data', $data);
             $socket->finish(true);
         }
+        return $socket;
     }
 
     /**
@@ -293,6 +310,7 @@ class Socket
      * @param Socket $socket
      * @param string $message
      * @param array $data
+     * @return static
      */
     public static function socketError($socket, $message, $data = null)
     {
@@ -302,6 +320,7 @@ class Socket
             $socket->set('result.data', $data);
             $socket->finish(true);
         }
+        return $socket;
     }
 
     /**
@@ -309,6 +328,7 @@ class Socket
      *
      * @param Socket $socket
      * @param string $message
+     * @return static
      */
     public static function socketConfirmation($socket, $message)
     {
@@ -317,6 +337,22 @@ class Socket
             $socket->set('confirmation.message', $message);
             $socket->status('waiting confirmation', true);
         }
+        return $socket;
+    }
+
+    /**
+     * Set the socket title.
+     *
+     * @param Socket $socket
+     * @param string $title
+     * @return static
+     */
+    public static function socketTitle($socket, $title)
+    {
+        if ($socket) {
+            $socket->set('title', $title, true);
+        }
+        return $socket;
     }
 
     /**
@@ -324,12 +360,14 @@ class Socket
      *
      * @param Socket $socket
      * @param string $message
+     * @return static
      */
     public static function socketMessage($socket, $message)
     {
         if ($socket) {
             $socket->set('message', $message, true);
         }
+        return $socket;
     }
 
     /**
@@ -337,6 +375,7 @@ class Socket
      *
      * @param Socket $socket
      * @param int $step
+     * @return static
      */
     public static function socketProgressIncrease($socket, $step = 1)
     {
@@ -344,6 +383,7 @@ class Socket
             $key = 'progress.position';
             $socket->set($key, $socket->get($key, 0) + $step, true);
         }
+        return $socket;
     }
 
     /**
@@ -351,12 +391,14 @@ class Socket
      *
      * @param Socket $socket
      * @param int $position
+     * @return static
      */
     public static function socketProgressPosition($socket, $position)
     {
         if ($socket) {
             $socket->set('progress.position', $position, true);
         }
+        return $socket;
     }
 
     /**
@@ -365,6 +407,7 @@ class Socket
      * @param Socket $socket
      * @param int $maximum
      * @param int $position
+     * @return static
      */
     public static function socketProgress($socket, $enabled, $maximum = -1, $position = 0)
     {
@@ -373,5 +416,6 @@ class Socket
             $socket->set('progress.maximum', $maximum);
             $socket->set('progress.position', $position, true);
         }
+        return $socket;
     }
 }

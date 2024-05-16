@@ -15,7 +15,7 @@ class SocketController extends Controller
      */
     public function get($id)
     {
-        $socket = Socket::createFromId(str_replace(['..', '\\', ';', '"', "'"], '', $id));
+        $socket = Socket::createFromId($id);
         if (!$socket) {
             return new JsonResponse(null, 404);
         }

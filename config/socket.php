@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'date_format' => env('SOCKET_DATE_FORMAT', 'Y-m-d H:i:s.v e'),
+
     'route' => [
         'prefix' => [
             'api' => env('SOCKET_ROUTE_PREFIX', 'api/socket'),
