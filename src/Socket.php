@@ -15,7 +15,7 @@ class Socket
     /**
      * Access to protected data property
      *
-     * @return void
+     * @return array
      */
     public function data(): array
     {
