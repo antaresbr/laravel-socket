@@ -65,17 +65,22 @@ class SocketTest extends TestCase
         $this->assertNotNull($socket->get('started'));
     }
 
+    protected $socket;
+
     protected function makedSocket()
     {
-        return Socket::make([
-            'id' => 'sub:maked_socket',
-            'status' => 'new',
-            'title' => 'Maked socket',
-            'progress' => [
-                'enabled' => true,
-                'maximum' => 10,
-            ],
-        ]);
+        if (!$this->socket) {
+            $this->socket = Socket::make([
+                'id' => 'sub:maked_socket',
+                'status' => 'new',
+                'title' => 'Maked socket',
+                'progress' => [
+                    'enabled' => true,
+                    'maximum' => 10,
+                ],
+            ]);
+        }
+        return $this->socket;
     }
 
     /** @test */

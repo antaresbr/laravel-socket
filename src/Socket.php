@@ -74,6 +74,7 @@ class Socket
             'created' => $now->format(config('socket.date_format')),
             'started' => null,
             'finished' => null,
+            'seen' => false,
             'title' => null,
             'message' => null,
             'progress' => [
