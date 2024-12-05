@@ -248,6 +248,32 @@ class Socket
         return $this;
     }
 
+    /**
+     * Define this socket to error state
+     *
+     * @param boolean $save
+     * @return static
+     */
+    public function error($save = false): static
+    {
+        $this->set('finished', Carbon::now()->format(config('socket.date_format')));
+        $this->status('error', $save);
+        return $this;
+    }
+
+    /**
+     * Define this socket to canceld state
+     *
+     * @param boolean $save
+     * @return static
+     */
+    public function cancel($save = false): static
+    {
+        $this->set('finished', Carbon::now()->format(config('socket.date_format')));
+        $this->status('canceled', $save);
+        return $this;
+    }
+
     //------------------------------
     //-- Safe socket manipulation --
     //------------------------------
@@ -319,9 +345,42 @@ class Socket
             $socket->set('result.error', true);
             $socket->set('result.message', $message);
             $socket->set('result.data', $data);
-            $socket->finish(true);
+            $socket->error(true);
         }
         return $socket;
+    }
+
+    /**
+     * Cancel socket.
+     *
+     * @param Socket $socket
+     * @param string $message
+     * @param array $data
+     * @return static
+     */
+    public static function socketCancel($socket, $message, $data = null)
+    {
+        if ($socket) {
+            $socket->set('result.message', $message);
+            $socket->set('result.data', $data);
+            $socket->error(true);
+        }
+        return $socket;
+    }
+
+    /**
+     * Check if socket is canceled
+     *
+     * @param Socket $socket
+     * @return bool
+     */
+    public static function socketIsCanceled(&$socket)
+    {
+        if ($socket) {
+            $socket->refresh();
+            return ($socket->get('status') == 'canceled');
+        }
+        return false;
     }
 
     /**
