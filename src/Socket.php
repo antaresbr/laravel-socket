@@ -274,6 +274,17 @@ class Socket
         return $this;
     }
 
+    /**
+     * Check if socket is canceled
+     *
+     * @return bool
+     */
+    public function isCanceled()
+    {
+        $this->refresh();
+        return ($this->get('status') == 'canceled');
+    }
+
     //------------------------------
     //-- Safe socket manipulation --
     //------------------------------
@@ -377,8 +388,7 @@ class Socket
     public static function socketIsCanceled(&$socket)
     {
         if ($socket) {
-            $socket->refresh();
-            return ($socket->get('status') == 'canceled');
+            return $socket->isCanceled();
         }
         return false;
     }
