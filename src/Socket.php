@@ -6,6 +6,31 @@ use Carbon\Carbon;
 
 class Socket
 {
+    const STATUS_UNDEFINED = 'undefined';
+    const STATUS_NEW = 'new';
+    const STATUS_QUEUED = 'queued';
+    const STATUS_WAITING = 'waiting';
+    const STATUS_RUNNING = 'running';
+    const STATUS_ERROR = 'error';
+    const STATUS_CANCELED = 'canceled';
+    const STATUS_FINISHED = 'finished';
+
+    /**
+     * Socket saved data
+     * @var array
+     */
+    protected $savedData = [];
+
+    /**
+     * Access to protected savedData property
+     *
+     * @return array
+     */
+    public function savedData(): array
+    {
+        return $this->savedData;
+    }
+
     /**
      * Socket data
      * @var array
@@ -70,7 +95,7 @@ class Socket
         $this->data = [
             'id' => $id,
             'user' => null,
-            'status' => 'undefined',
+            'status' => self::STATUS_UNDEFINED,
             'created' => $now->format(config('socket.date_format')),
             'started' => null,
             'finished' => null,
@@ -170,14 +195,29 @@ class Socket
     }
 
     /**
+     * Load data content from id
+     *
+     * @param string $id
+     * @return array|null
+     */
+    public function loadContentFromId($id = null): array|null
+    {
+        $fileName = static::fileName($id ?? $this->get('id'));
+        $content = file_exists($fileName) ? file_get_contents($fileName) : null;
+        return $content ? json_decode($content, true) : null;
+    }
+
+    /**
      * Load data from id
      *
      * @param string $id
      * @return static
      */
-    public function loadFromId($id): static
+    public function loadFromId($id = null): static
     {
-        $this->data = json_decode(file_get_contents(static::fileName($id)), true);
+        $content = $this->loadContentFromId($id);
+        $this->savedData = $content;
+        $this->data = $content;
         return $this;
     }
 
@@ -188,24 +228,28 @@ class Socket
      */
     public function refresh(): static
     {
-        $this->loadFromId($this->get('id'));
+        $this->loadFromId();
         return $this;
     }
 
     /**
      * Save current object to file
      *
+     * @param  bool $force
      * @return static
      */
-    public function saveToFile(): static
+    public function saveToFile(bool $force = false): static
     {
-        $fileName = static::fileName($this->get('id'));
-        $dirName = dirname($fileName);
-        if (!empty($dirName) and !is_dir($dirName)) {
-            mkdir($dirName, 0755, true);
+        if ($force or !$this->isCanceled()) {
+            $fileName = static::fileName($this->get('id'));
+            $dirName = dirname($fileName);
+            if (!empty($dirName) and !is_dir($dirName)) {
+                mkdir($dirName, 0775, true);
+            }
+            $data = json_encode($this->data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK | JSON_PRETTY_PRINT);
+            file_put_contents($fileName, $data);
+            $this->savedData = $data;
         }
-        $data = json_encode($this->data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK | JSON_PRETTY_PRINT);
-        file_put_contents($fileName, $data);
         return $this;
     }
 
@@ -231,7 +275,7 @@ class Socket
     public function start($save = false): static
     {
         $this->set('started', Carbon::now()->format(config('socket.date_format')));
-        $this->status('running', $save);
+        $this->status(self::STATUS_RUNNING, $save);
         return $this;
     }
 
@@ -244,7 +288,7 @@ class Socket
     public function finish($save = false): static
     {
         $this->set('finished', Carbon::now()->format(config('socket.date_format')));
-        $this->status('finished', $save);
+        $this->status(self::STATUS_FINISHED, $save);
         return $this;
     }
 
@@ -257,7 +301,7 @@ class Socket
     public function error($save = false): static
     {
         $this->set('finished', Carbon::now()->format(config('socket.date_format')));
-        $this->status('error', $save);
+        $this->status(self::STATUS_ERROR, $save);
         return $this;
     }
 
@@ -270,7 +314,7 @@ class Socket
     public function cancel($save = false): static
     {
         $this->set('finished', Carbon::now()->format(config('socket.date_format')));
-        $this->status('canceled', $save);
+        $this->status(self::STATUS_CANCELED)->saveToFile(true);
         return $this;
     }
 
@@ -281,8 +325,8 @@ class Socket
      */
     public function isCanceled()
     {
-        $this->refresh();
-        return ($this->get('status') == 'canceled');
+        $this->savedData = $this->loadContentFromId() ?? [];
+        return ($this->get('status') == self::STATUS_CANCELED or Arr::get($this->savedData, 'status') == self::STATUS_CANCELED);
     }
 
     //------------------------------
@@ -369,12 +413,12 @@ class Socket
      * @param array $data
      * @return static
      */
-    public static function socketCancel($socket, $message, $data = null)
+    public static function socketCancel($socket, $message = null, $data = null)
     {
         if ($socket) {
-            $socket->set('result.message', $message);
-            $socket->set('result.data', $data);
-            $socket->error(true);
+            is_null($message) or $socket->set('result.message', $message);
+            is_null($data) or $socket->set('result.data', $data);
+            $socket->cancel(true);
         }
         return $socket;
     }
@@ -405,7 +449,7 @@ class Socket
         if ($socket) {
             $socket->set('confirmation.enabled', true);
             $socket->set('confirmation.message', $message);
-            $socket->status('waiting confirmation', true);
+            $socket->status(self::STATUS_WAITING, true);
         }
         return $socket;
     }

@@ -21,7 +21,7 @@ class GetTest extends TestCase
     {
         $socket = Socket::make([
             'id' => 'sub:maked_socket',
-            'status' => 'new',
+            'status' => Socket::STATUS_NEW,
             'title' => 'Maked socket',
             'progress' => [
                 'enabled' => true,
