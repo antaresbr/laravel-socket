@@ -233,6 +233,26 @@ class Socket
     }
 
     /**
+     * POSIX check if user is in group
+     *
+     * @param  int $uid
+     * @param  int $gid
+     * @return bool
+     */
+    protected static function posixUserInGroup($uid, $gid): bool
+    {
+        $inGroup = false;
+
+        $user = posix_getpwuid($uid);
+        $group = posix_getgrgid($gid);
+        if ($user and $group) {
+            $inGroup = in_array($user['name'], $group['members']);
+        }
+
+        return $inGroup;
+    }
+
+    /**
      * Save current object to file
      *
      * @param  bool $force
@@ -244,7 +264,18 @@ class Socket
             $fileName = static::fileName($this->get('id'));
             $dirName = dirname($fileName);
             if (!empty($dirName) and !is_dir($dirName)) {
-                mkdir($dirName, 0775, true);
+                mkdir($dirName);
+                chmod($dirName, 0775);
+                if (static::posixUserInGroup(getmyuid(), filegroup(dirname($dirName)))) {
+                    chgrp($dirName, filegroup(dirname($dirName)));
+                }
+            }
+            if (!is_file($fileName)) {
+                touch($fileName);
+                chmod($fileName, 0664);
+                if (static::posixUserInGroup(getmyuid(), filegroup(dirname($dirName)))) {
+                    chgrp($fileName, filegroup(dirname($fileName)));
+                }
             }
             $data = json_encode($this->data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK | JSON_PRETTY_PRINT);
             file_put_contents($fileName, $data);
