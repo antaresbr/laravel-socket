@@ -18,7 +18,7 @@
     "require": {
         "php": "^8.2",
         "antaresbr/foundation": "*",
-        "laravel/framework": "^11",
+        "laravel/framework": "^12",
         "nesbot/carbon": "^2.71.0 || ^3.0.0"
     },
     "autoload": {
@@ -30,7 +30,7 @@
         }
     },
     "require-dev": {
-        "orchestra/testbench": "^9"
+        "orchestra/testbench": "^10"
     },
     "autoload-dev": {
         "psr-4": {
