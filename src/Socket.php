@@ -264,7 +264,7 @@ class Socket
             $fileName = static::fileName($this->get('id'));
             $dirName = dirname($fileName);
             if (!empty($dirName) and !is_dir($dirName)) {
-                mkdir($dirName);
+                mkdir($dirName, 0775, true);
                 chmod($dirName, 0775);
                 if (static::posixUserInGroup(getmyuid(), filegroup(dirname($dirName)))) {
                     chgrp($dirName, filegroup(dirname($dirName)));
