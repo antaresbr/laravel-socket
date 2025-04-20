@@ -1,21 +1,24 @@
 <?php declare(strict_types=1);
-namespace Antares\Socket\Tests\Unit;
 
-use Antares\Socket\Tests\TestCase;
+namespace Antares\Picklist\Api\Tests\Unit;
+
+use Antares\Picklist\Api\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 final class SupportTest extends TestCase
 {
     private function getPath()
     {
-        return ai_socket_path();
+        return ai_picklist_api_path();
     }
 
     private function getInfos()
     {
-        return ai_socket_infos();
+        return ai_picklist_api_infos();
     }
 
-    public function testHelpers()
+    #[Test]
+    public function helpers()
     {
         $path = $this->getPath();
         $this->assertIsString($path);
@@ -25,7 +28,8 @@ final class SupportTest extends TestCase
         $this->assertIsObject($infos);
     }
 
-    public function testInfos()
+    #[Test]
+    public function infos()
     {
         $infos = $this->getInfos();
         $this->assertObjectHasProperty('name', $infos);
