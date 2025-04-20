@@ -4,19 +4,20 @@ namespace Antares\Socket\Tests\Feature;
 use Antares\Socket\Socket;
 use Antares\Socket\Tests\TestCase;
 use Illuminate\Foundation\Testing\WithoutMiddleware;
+use PHPUnit\Framework\Attributes\Test;
 
 class GetTest extends TestCase
 {
     use WithoutMiddleware;
 
-    /** @test */
+    #[Test]
     public function get_with_not_found_id()
     {
         $response = $this->get(config('socket.route.prefix.api') . '/get/dummy_id');
         $response->assertStatus(404);
     }
 
-    /** @test */
+    #[Test]
     public function get_successful()
     {
         $socket = Socket::make([

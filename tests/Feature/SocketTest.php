@@ -5,10 +5,11 @@ use Antares\Foundation\Arr;
 use Antares\Socket\Socket;
 use Antares\Socket\Tests\TestCase;
 use Carbon\Carbon;
+use PHPUnit\Framework\Attributes\Test;
 
 class SocketTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function create_socket_without_prefix()
     {
         $socket = new Socket();
@@ -16,7 +17,7 @@ class SocketTest extends TestCase
         $this->assertStringNotContainsString(':', $socket->get('id'));
     }
 
-    /** @test */
+    #[Test]
     public function create_socket_with_prefix()
     {
         $socket = new Socket('prefix');
@@ -24,7 +25,7 @@ class SocketTest extends TestCase
         $this->assertStringStartsWith('prefix:' . Carbon::now()->format('Y-m-d'), $socket->get('id'));
     }
 
-    /** @test */
+    #[Test]
     public function socket_data_manipulation()
     {
         $socket = new Socket();
@@ -44,7 +45,7 @@ class SocketTest extends TestCase
         $this->assertCount(3, $socket->get('result.files'));
     }
 
-    /** @test */
+    #[Test]
     public function socket_safe_data_manipulation()
     {
         $socket = new Socket();
@@ -86,7 +87,7 @@ class SocketTest extends TestCase
         return $this->socket;
     }
 
-    /** @test */
+    #[Test]
     public function make_socket()
     {
         $socket = $this->makedSocket();
@@ -101,7 +102,7 @@ class SocketTest extends TestCase
         $this->assertEquals(-1, $socket->get('progress.position'));
     }
 
-    /** @test */
+    #[Test]
     public function create_from_id()
     {
         $socket = Socket::createFromId('sub:maked_socket');
@@ -112,7 +113,7 @@ class SocketTest extends TestCase
         $this->assertEquals(json_encode($this->makedSocket()->data()), json_encode($socket->data()));
     }
 
-    /** @test */
+    #[Test]
     public function cancel_socket()
     {
         $socket1 = new Socket();

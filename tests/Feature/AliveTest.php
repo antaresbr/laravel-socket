@@ -2,10 +2,11 @@
 namespace Antares\Socket\Tests\Feature;
 
 use Antares\Socket\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class AliveTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function get_alive()
     {
         $response = $this->get(config('socket.route.prefix.api') . '/alive');
