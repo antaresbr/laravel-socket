@@ -16,8 +16,9 @@
     ],
     "license": "MIT",
     "require": {
-        "php": ">=8",
+        "php": "^8",
         "antaresbr/foundation": "*",
+        "laravel/framework": "^8",
         "nesbot/carbon": "^2.71.0 || ^3.0.0"
     },
     "autoload": {

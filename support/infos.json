@@ -1,8 +1,8 @@
 {
     "name": "antaresbr/laravel-socket",
     "version": {
-        "major": 1,
-        "release": 1,
-        "minor": 6
+        "major": 8,
+        "release": 0,
+        "minor": 0
     }
 }
