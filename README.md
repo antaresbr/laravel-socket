@@ -1,2 +1,2 @@
 # laravel-socket
-A custom socket package for Laravel 8 Framework
+A custom socket package for Laravel 9 Framework
