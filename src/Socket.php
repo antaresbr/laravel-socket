@@ -13,6 +13,7 @@ class Socket
     const STATUS_RUNNING = 'running';
     const STATUS_ERROR = 'error';
     const STATUS_CANCELED = 'canceled';
+    const STATUS_DELETED = 'deleted';
     const STATUS_FINISHED = 'finished';
 
     /**
@@ -109,7 +110,7 @@ class Socket
             ],
             'result' => [
                 'error' => false,
-                'message' => -1,
+                'message' => null,
                 'files' => [],
                 'data' => [],
             ],
@@ -228,8 +229,7 @@ class Socket
      */
     public function refresh(): static
     {
-        $this->loadFromId();
-        return $this;
+        return $this->loadFromId();
     }
 
     /**
@@ -298,6 +298,22 @@ class Socket
     }
 
     /**
+     * Check if socket is in specific status
+     *
+     * @param string $status
+     * @return bool
+     */
+    public function statusIs($status)
+    {
+        $r = $this->get('status') == $status;
+        if (!$r) {
+            $this->savedData = $this->loadContentFromId() ?? [];
+            $r = Arr::get($this->savedData, 'status') == $status;
+        }
+        return $r;
+    }
+
+    /**
      * Define this socket to running state
      *
      * @param boolean $save
@@ -344,8 +360,18 @@ class Socket
      */
     public function cancel($save = false): static
     {
-        $this->set('finished', Carbon::now()->format(config('socket.date_format')));
-        $this->status(self::STATUS_CANCELED)->saveToFile(true);
+        $canCancel = [
+            self::STATUS_UNDEFINED,
+            self::STATUS_NEW,
+            self::STATUS_QUEUED,
+            self::STATUS_WAITING,
+            self::STATUS_RUNNING,
+            self::STATUS_ERROR,
+        ];
+        if (in_array($this->get('status'), $canCancel)) {
+            $this->set('finished', Carbon::now()->format(config('socket.date_format')));
+            $this->status(self::STATUS_CANCELED, $save);
+        }
         return $this;
     }
 
@@ -356,13 +382,58 @@ class Socket
      */
     public function isCanceled()
     {
-        $this->savedData = $this->loadContentFromId() ?? [];
-        return ($this->get('status') == self::STATUS_CANCELED or Arr::get($this->savedData, 'status') == self::STATUS_CANCELED);
+        return $this->statusIs(self::STATUS_CANCELED);
+    }
+
+    /**
+     * Define this socket to deleted state
+     *
+     * @param boolean $save
+     * @return static
+     */
+    public function delete($save = false): static
+    {
+        $this->status(self::STATUS_DELETED, $save);
+        return $this;
+    }
+
+    /**
+     * Check if socket is deleted
+     *
+     * @return bool
+     */
+    public function isDeleted()
+    {
+        return $this->statusIs(self::STATUS_DELETED);
+    }
+
+    /**
+     * Check if socket is canceled ordeleted
+     *
+     * @return bool
+     */
+    public function isCanceledOrDeleted()
+    {
+        return $this->isCanceled() or $this->isDeleted();
     }
 
     //------------------------------
     //-- Safe socket manipulation --
     //------------------------------
+
+    /**
+     * Refresh socket data
+     *
+     * @param Socket $socket
+     * @return static
+     */
+    public static function socketRefresh($socket)
+    {
+        if ($socket) {
+            $socket->refresh();
+        }
+        return $socket;
+    }
 
     /**
      * Define socket status
@@ -516,6 +587,24 @@ class Socket
     }
 
     /**
+     * Set the socket progress options
+     *
+     * @param Socket $socket
+     * @param int $maximum
+     * @param int $position
+     * @return static
+     */
+    public static function socketProgress($socket, $enabled, $maximum = -1, $position = 0)
+    {
+        if ($socket) {
+            $socket->set('progress.enabled', $enabled);
+            $socket->set('progress.maximum', $maximum);
+            $socket->set('progress.position', $position, true);
+        }
+        return $socket;
+    }
+
+    /**
      * Increase progress position
      *
      * @param Socket $socket
@@ -541,24 +630,6 @@ class Socket
     public static function socketProgressPosition($socket, $position)
     {
         if ($socket) {
-            $socket->set('progress.position', $position, true);
-        }
-        return $socket;
-    }
-
-    /**
-     * Set the socket progress options
-     *
-     * @param Socket $socket
-     * @param int $maximum
-     * @param int $position
-     * @return static
-     */
-    public static function socketProgress($socket, $enabled, $maximum = -1, $position = 0)
-    {
-        if ($socket) {
-            $socket->set('progress.enabled', $enabled);
-            $socket->set('progress.maximum', $maximum);
             $socket->set('progress.position', $position, true);
         }
         return $socket;
