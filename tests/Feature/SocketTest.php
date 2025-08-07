@@ -112,46 +112,112 @@ class SocketTest extends TestCase
         $this->assertEquals(json_encode($this->makedSocket()->data()), json_encode($socket->data()));
     }
 
-    /** @test */
-    public function cancel_socket()
+    private function new_socket()
     {
-        $socket1 = new Socket();
-        $socket1->set('status', Socket::STATUS_NEW);
-        $socket1->saveToFile();
+        $socket = new Socket();
+        $socket->set('status', Socket::STATUS_NEW);
+        $socket->saveToFile();
 
-        $socket2 = Socket::createFromId($socket1->get('id'));
-        $this->assertEquals($socket1->data(), $socket2->data());
-
-        Socket::socketProgress($socket1, true, 10);
-        $this->assertEquals(10, $socket1->get('progress.maximum'));
+        Socket::socketProgress($socket, true, 10);
+        $this->assertEquals(10, $socket->get('progress.maximum'));
         
-        Socket::socketProgressIncrease($socket1, 3);
-        $this->assertFalse($socket1->isCanceled());
-        $this->assertEquals(3, $socket1->get('progress.position'));
+        Socket::socketProgressIncrease($socket, 3);
+        $this->assertEquals(3, $socket->get('progress.position'));
+        $this->assertFalse($socket->hasError());
+        $this->assertTrue($socket->isActive());
         
-        $socket1->set('result.message', 'Result message');
-        $socket1->set('result.data', ['Result data']);
-        $socket2->refresh();
+        $socket->set('result.message', 'Result message');
+        $socket->set('result.data', ['Result data']);
+        $this->assertEquals('Result message', $socket->get('result.message'));
+        $this->assertEquals(['Result data'], $socket->get('result.data'));
 
-        Socket::socketCancel($socket1);
-        $this->assertTrue($socket1->isCanceled());
-        $this->assertEquals($socket1->data(), $socket1->savedData());
-        $this->assertEquals('Result message', $socket1->get('result.message'));
-        $this->assertEquals(['Result data'], $socket1->get('result.data'));
+        return $socket;
+    }
+
+    /** @test */
+    public function successful_socket_and_delete()
+    {
+        $socket = $this->new_socket();
+
+        Socket::socketSuccessful($socket, 'Successful message', ['Successful data'], ['file1.txt', 'file2.txt']);
+        $this->assertTrue($socket->isSuccessful());
+        $this->assertTrue($socket->isInactive());
+        $this->assertFalse($socket->isActive());
+        $this->assertEquals($socket->data(), $socket->savedData());
+        $this->assertEquals('Successful message', $socket->get('result.message'));
+        $this->assertEquals(['Successful data'], $socket->get('result.data'));
+        $this->assertEquals(['file1.txt', 'file2.txt'], $socket->get('result.files'));
+
+        $socket->set('status', Socket::STATUS_RUNNING)->saveToFile();
+        $this->assertTrue($socket->isSuccessful());
+        $this->assertTrue($socket->isInactive());
+        $this->assertFalse($socket->isActive());
+
+        $this->do_delete_socket($socket);
+    }
+
+    /** @test */
+    public function error_socket_and_delete()
+    {
+        $socket = $this->new_socket();
+
+        Socket::socketError($socket, 'Error message', ['Error data']);
+        $this->assertTrue($socket->hasError());
+        $this->assertTrue($socket->isInactive());
+        $this->assertFalse($socket->isActive());
+        $this->assertEquals($socket->data(), $socket->savedData());
+        $this->assertEquals('Error message', $socket->get('result.message'));
+        $this->assertEquals(['Error data'], $socket->get('result.data'));
+
+        $socket->set('status', Socket::STATUS_RUNNING)->saveToFile();
+        $this->assertTrue($socket->hasError());
+        $this->assertTrue($socket->isInactive());
+        $this->assertFalse($socket->isActive());
+
+        $this->do_delete_socket($socket);
+    }
+
+    /** @test */
+    public function cancel_socket_and_delete()
+    {
+        $socket = $this->new_socket();
         
-        Socket::socketProgressIncrease($socket2, 2);
-        Socket::socketFinish($socket2, 'Successful');
-        $this->assertTrue($socket2->isCanceled());
-        $this->assertNotEquals($socket2->data(), $socket2->savedData());
-        $this->assertEquals(5, $socket2->get('progress.position'));
-        $this->assertEquals(Socket::STATUS_FINISHED, $socket2->get('status'));
-        $this->assertEquals(3, Arr::get($socket2->savedData(), 'progress.position'));
-        $this->assertEquals(Socket::STATUS_CANCELED, Arr::get($socket2->savedData(), 'status'));
+        Socket::socketCancel($socket, 'Cancel message', ['Cancel data']);
+        $this->assertTrue($socket->isCanceled());
+        $this->assertTrue($socket->isInactive());
+        $this->assertFalse($socket->isActive());
+        $this->assertEquals($socket->data(), $socket->savedData());
+        $this->assertEquals('Cancel message', $socket->get('result.message'));
+        $this->assertEquals(['Cancel data'], $socket->get('result.data'));
 
-        Socket::socketCancel($socket2, 'Socket2 message', ['Socket2 data']);
-        $this->assertTrue($socket2->isCanceled());
-        $this->assertEquals($socket2->data(), $socket2->savedData());
-        $this->assertEquals('Socket2 message', $socket2->get('result.message'));
-        $this->assertEquals(['Socket2 data'], $socket2->get('result.data'));
+        $socket->set('status', Socket::STATUS_RUNNING)->saveToFile();
+        $this->assertTrue($socket->isCanceled());
+        $this->assertTrue($socket->isInactive());
+        $this->assertFalse($socket->isActive());
+
+        $this->do_delete_socket($socket);
+    }
+
+    private function do_delete_socket($socket) {
+        Socket::socketDelete($socket, 'Delete message', ['Delete data']);
+        $this->assertTrue($socket->isDeleted());
+        $this->assertTrue($socket->isInactive());
+        $this->assertFalse($socket->isActive());
+        $this->assertEquals($socket->data(), $socket->savedData());
+        $this->assertEquals('Delete message', $socket->get('result.message'));
+        $this->assertEquals(['Delete data'], $socket->get('result.data'));
+    }
+
+    /** @test */
+    public function delete_socket()
+    {
+        $socket = $this->new_socket();
+
+        $this->do_delete_socket($socket);
+
+        $socket->set('status', Socket::STATUS_RUNNING)->saveToFile();
+        $this->assertTrue($socket->isDeleted());
+        $this->assertTrue($socket->isInactive());
+        $this->assertFalse($socket->isActive());
     }
 }
