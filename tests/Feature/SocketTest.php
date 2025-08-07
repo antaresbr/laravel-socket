@@ -5,6 +5,7 @@ use Antares\Foundation\Arr;
 use Antares\Socket\Socket;
 use Antares\Socket\Tests\TestCase;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\App;
 
 class SocketTest extends TestCase
 {
@@ -219,5 +220,65 @@ class SocketTest extends TestCase
         $this->assertTrue($socket->isDeleted());
         $this->assertTrue($socket->isInactive());
         $this->assertFalse($socket->isActive());
+    }
+
+    /** @test */
+    public function locale_successful_socket()
+    {
+        $socket = $this->new_socket();
+        Socket::socketSuccessful($socket, 'Successful message', ['Successful data'], ['file1.txt', 'file2.txt']);
+        $this->assertEquals('Completed successfully', $socket->get('message'));
+        
+        $this->app->setLocale('pt_BR');
+        $this->assertEquals('pt_BR', $this->app->getLocale());
+
+        $socket = $this->new_socket();
+        Socket::socketSuccessful($socket, 'Successful message', ['Successful data'], ['file1.txt', 'file2.txt']);
+        $this->assertEquals('Concluído com sucesso', $socket->get('message'));
+    }
+
+    /** @test */
+    public function locale_error_socket()
+    {
+        $socket = $this->new_socket();
+        Socket::socketError($socket, 'Error message', ['Error data']);
+        $this->assertEquals('Completed with error', $socket->get('message'));
+        
+        $this->app->setLocale('pt_BR');
+        $this->assertEquals('pt_BR', $this->app->getLocale());
+
+        $socket = $this->new_socket();
+        Socket::socketError($socket, 'Error message', ['Error data']);
+        $this->assertEquals('Concluído com erro', $socket->get('message'));
+    }
+
+    /** @test */
+    public function locale_cancel_socket()
+    {
+        $socket = $this->new_socket();
+        Socket::socketCancel($socket, 'Cancel message', ['Cancel data']);
+        $this->assertEquals('Canceled by user', $socket->get('message'));
+        
+        $this->app->setLocale('pt_BR');
+        $this->assertEquals('pt_BR', $this->app->getLocale());
+
+        $socket = $this->new_socket();
+        Socket::socketCancel($socket, 'Cancel message', ['Cancel data']);
+        $this->assertEquals('Cancelado pelo usuário', $socket->get('message'));
+    }
+
+    /** @test */
+    public function locale_delete_socket()
+    {
+        $socket = $this->new_socket();
+        $this->do_delete_socket($socket);
+        $this->assertEquals('Deleted from the system', $socket->get('message'));
+        
+        $this->app->setLocale('pt_BR');
+        $this->assertEquals('pt_BR', $this->app->getLocale());
+
+        $socket = $this->new_socket();
+        $this->do_delete_socket($socket);
+        $this->assertEquals('Excluído do sistema', $socket->get('message'));
     }
 }

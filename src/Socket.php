@@ -405,7 +405,7 @@ class Socket
                 $this->set('result.files', $files);
             }
             $this->set('finished', Carbon::now()->format(config('socket.date_format')));
-            $this->set('message', _('Completed successfully'));
+            $this->set('message', trans('socket::messages.completed_successfully'));
             $this->status(self::STATUS_SUCCESSFUL);
             $this->saveToFile(true);
             $this->saveToFile(true, self::STATUS_SUCCESSFUL);
@@ -441,7 +441,7 @@ class Socket
                 $this->set('result.data', $data);
             }
             $this->set('finished', Carbon::now()->format(config('socket.date_format')));
-            $this->set('message', _('Completed with error'));
+            $this->set('message', trans('socket::messages.completed_with_error'));
             $this->status(self::STATUS_ERROR);
             $this->saveToFile(true);
             $this->saveToFile(true, self::STATUS_ERROR);
@@ -477,7 +477,7 @@ class Socket
                 $this->set('result.data', $data);
             }
             $this->set('finished', Carbon::now()->format(config('socket.date_format')));
-            $this->set('message', _('Canceled by user'));
+            $this->set('message', trans('socket::messages.canceled_by_user'));
             $this->status(self::STATUS_CANCELED);
             $this->saveToFile(true);
             $this->saveToFile(true, self::STATUS_CANCELED);
@@ -512,7 +512,7 @@ class Socket
                 $this->set('result.data', $data);
             }
             $this->set('finished', Carbon::now()->format(config('socket.date_format')));
-            $this->set('message', _('Deleted from the system'));
+            $this->set('message', trans('socket::messages.deleted_from_the_system'));
             $this->status(self::STATUS_DELETED);
             $this->saveToFile(true);
             $this->saveToFile(true, self::STATUS_DELETED);

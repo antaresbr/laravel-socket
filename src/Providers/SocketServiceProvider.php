@@ -24,6 +24,8 @@ class SocketServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        $this->loadTranslationsFrom(ai_socket_path('lang'), 'socket');
+
         $this->loadRoutes();
 
         if ($this->app->runningInConsole()) {
