@@ -11,7 +11,7 @@ class Socket
     const STATUS_QUEUED = 'queued';
     const STATUS_WAITING = 'waiting';
     const STATUS_RUNNING = 'running';
-    const STATUS_ERROR = 'error';
+    const STATUS_FAILED = 'failed';
     const STATUS_CANCELED = 'canceled';
     const STATUS_DELETED = 'deleted';
     const STATUS_SUCCESSFUL = 'successful';
@@ -310,7 +310,7 @@ class Socket
         $id = $this->get('id');
         return (
             is_file(static::fileName($id, self::STATUS_DELETED)) or
-            is_file(static::fileName($id, self::STATUS_ERROR)) or
+            is_file(static::fileName($id, self::STATUS_FAILED)) or
             is_file(static::fileName($id, self::STATUS_CANCELED)) or
             is_file(static::fileName($id, self::STATUS_SUCCESSFUL))
         );
@@ -347,8 +347,8 @@ class Socket
             return $r or $isDeleted;
         }
         
-        if ($status == self::STATUS_ERROR) {
-            return $r or (!$isDeleted and is_file(static::fileName($id, self::STATUS_ERROR)));
+        if ($status == self::STATUS_FAILED) {
+            return $r or (!$isDeleted and is_file(static::fileName($id, self::STATUS_FAILED)));
         }
         
         if ($status == self::STATUS_CANCELED) {
@@ -424,13 +424,13 @@ class Socket
     }
 
     /**
-     * Define this socket to error state
+     * Define this socket as failed
      *
      * @param mixed $message
      * @param mixed $data
      * @return static
      */
-    public function error($message = null, $data = null): static
+    public function fail($message = null, $data = null): static
     {
         if ($this->isActive()) {
             $this->set('result.error', true);
@@ -441,10 +441,10 @@ class Socket
                 $this->set('result.data', $data);
             }
             $this->set('finished', Carbon::now()->format(config('socket.date_format')));
-            $this->set('message', trans('socket::messages.completed_with_error'));
-            $this->status(self::STATUS_ERROR);
+            $this->set('message', trans('socket::messages.completed_with_failure'));
+            $this->status(self::STATUS_FAILED);
             $this->saveToFile(true);
-            $this->saveToFile(true, self::STATUS_ERROR);
+            $this->saveToFile(true, self::STATUS_FAILED);
         }
         return $this;
     }
@@ -454,9 +454,9 @@ class Socket
      *
      * @return bool
      */
-    public function hasError()
+    public function isFailed()
     {
-        return $this->statusIs(self::STATUS_ERROR);
+        return $this->statusIs(self::STATUS_FAILED);
     }
 
     /**
@@ -639,31 +639,31 @@ class Socket
     }
 
     /**
-     * Set the socket error.
+     * Set the socket as failed
      *
      * @param Socket $socket
      * @param string $message
      * @param array $data
      * @return static
      */
-    public static function socketError($socket, $message, $data = null)
+    public static function socketFail($socket, $message, $data = null)
     {
         if ($socket) {
-            $socket->error($message, $data);
+            $socket->fail($message, $data);
         }
         return $socket;
     }
 
     /**
-     * Check if socket has error
+     * Check if socket is failed
      *
      * @param Socket $socket
      * @return bool
      */
-    public static function socketHasError($socket)
+    public static function socketIsFailed($socket)
     {
         if ($socket) {
-            return $socket->hasError();
+            return $socket->isFailed();
         }
         return false;
     }

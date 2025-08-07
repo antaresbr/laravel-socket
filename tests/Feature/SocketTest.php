@@ -124,7 +124,7 @@ class SocketTest extends TestCase
         
         Socket::socketProgressIncrease($socket, 3);
         $this->assertEquals(3, $socket->get('progress.position'));
-        $this->assertFalse($socket->hasError());
+        $this->assertFalse($socket->isFailed());
         $this->assertTrue($socket->isActive());
         
         $socket->set('result.message', 'Result message');
@@ -158,20 +158,20 @@ class SocketTest extends TestCase
     }
 
     /** @test */
-    public function error_socket_and_delete()
+    public function fail_socket_and_delete()
     {
         $socket = $this->new_socket();
 
-        Socket::socketError($socket, 'Error message', ['Error data']);
-        $this->assertTrue($socket->hasError());
+        Socket::socketFail($socket, 'Failure message', ['Failure data']);
+        $this->assertTrue($socket->isFailed());
         $this->assertTrue($socket->isInactive());
         $this->assertFalse($socket->isActive());
         $this->assertEquals($socket->data(), $socket->savedData());
-        $this->assertEquals('Error message', $socket->get('result.message'));
-        $this->assertEquals(['Error data'], $socket->get('result.data'));
+        $this->assertEquals('Failure message', $socket->get('result.message'));
+        $this->assertEquals(['Failure data'], $socket->get('result.data'));
 
         $socket->set('status', Socket::STATUS_RUNNING)->saveToFile();
-        $this->assertTrue($socket->hasError());
+        $this->assertTrue($socket->isFailed());
         $this->assertTrue($socket->isInactive());
         $this->assertFalse($socket->isActive());
 
@@ -238,18 +238,18 @@ class SocketTest extends TestCase
     }
 
     /** @test */
-    public function locale_error_socket()
+    public function locale_fail_socket()
     {
         $socket = $this->new_socket();
-        Socket::socketError($socket, 'Error message', ['Error data']);
-        $this->assertEquals('Completed with error', $socket->get('message'));
+        Socket::socketFail($socket, 'Failure message', ['Failure data']);
+        $this->assertEquals('Completed with failure', $socket->get('message'));
         
         $this->app->setLocale('pt_BR');
         $this->assertEquals('pt_BR', $this->app->getLocale());
 
         $socket = $this->new_socket();
-        Socket::socketError($socket, 'Error message', ['Error data']);
-        $this->assertEquals('Concluído com erro', $socket->get('message'));
+        Socket::socketFail($socket, 'Failure message', ['Failure data']);
+        $this->assertEquals('Concluído com falha', $socket->get('message'));
     }
 
     /** @test */
