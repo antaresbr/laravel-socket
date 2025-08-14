@@ -305,7 +305,7 @@ class Socket
      *
      * @return bool
      */
-    public function isInactive()
+    public function isInactive(): bool
     {
         $id = $this->get('id');
         return (
@@ -321,7 +321,7 @@ class Socket
      *
      * @return bool
      */
-    public function isActive()
+    public function isActive(): bool
     {
         return !$this->isInactive();
     }
@@ -332,7 +332,7 @@ class Socket
      * @param string $status
      * @return bool
      */
-    public function statusIs($status)
+    public function statusIs($status): bool
     {
         $s = $this->get('status');
         if (empty($s)) {
@@ -418,7 +418,7 @@ class Socket
      *
      * @return bool
      */
-    public function isSuccessful()
+    public function isSuccessful(): bool
     {
         return $this->statusIs(self::STATUS_SUCCESSFUL);
     }
@@ -454,7 +454,7 @@ class Socket
      *
      * @return bool
      */
-    public function isFailed()
+    public function isFailed(): bool
     {
         return $this->statusIs(self::STATUS_FAILED);
     }
@@ -490,7 +490,7 @@ class Socket
      *
      * @return bool
      */
-    public function isCanceled()
+    public function isCanceled(): bool
     {
         return $this->statusIs(self::STATUS_CANCELED);
     }
@@ -525,9 +525,36 @@ class Socket
      *
      * @return bool
      */
-    public function isDeleted()
+    public function isDeleted(): bool
     {
         return $this->statusIs(self::STATUS_DELETED);
+    }
+
+    /**
+     * Define this socket as seen
+     *
+     * @return static
+     */
+    public function see(): static
+    {
+        if (!$this->get('seen')) {
+            $this->set('seen', true);
+            $this->saveToFile(true);
+            if ($this->isInactive()) {
+                $this->saveToFile(true, $this->get('status'));
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * Check if socket is deleted
+     *
+     * @return bool
+     */
+    public function wasSeen(): bool
+    {
+        return $this->get('seen', false);
     }
 
     //------------------------------
@@ -538,9 +565,9 @@ class Socket
      * Refresh socket data
      *
      * @param Socket $socket
-     * @return static
+     * @return ?static
      */
-    public static function socketRefresh($socket)
+    public static function socketRefresh($socket): ?static
     {
         if ($socket) {
             $socket->refresh();
@@ -553,9 +580,9 @@ class Socket
      *
      * @param Socket $socket
      * @param string $status
-     * @return static
+     * @return ?static
      */
-    public static function socketStatus($socket, $status)
+    public static function socketStatus($socket, $status): ?static
     {
         if ($socket) {
             $socket->status($status, true);
@@ -569,7 +596,7 @@ class Socket
      * @param Socket $socket
      * @return bool
      */
-    public static function socketIsInactive($socket)
+    public static function socketIsInactive($socket): bool
     {
         if ($socket) {
             return $socket->isInactive();
@@ -583,7 +610,7 @@ class Socket
      * @param Socket $socket
      * @return bool
      */
-    public static function socketIsActive($socket)
+    public static function socketIsActive($socket): bool
     {
         if ($socket) {
             return $socket->isActive();
@@ -597,9 +624,9 @@ class Socket
      * @param Socket $socket
      * @param string $title
      * @param string $message
-     * @return static
+     * @return ?static
      */
-    public static function socketStart($socket, $title, $message)
+    public static function socketStart($socket, $title, $message): ?static
     {
         if ($socket) {
             $socket->start($title, $message, true);
@@ -614,9 +641,9 @@ class Socket
      * @param string $message
      * @param array $data
      * @param array $files
-     * @return static
+     * @return ?static
      */
-    public static function socketSuccessful($socket, $message = null, $data = null, $files = null)
+    public static function socketSuccessful($socket, $message = null, $data = null, $files = null): ?static
     {
         if ($socket) {
             $socket->successful($message, $data, $files);
@@ -630,7 +657,7 @@ class Socket
      * @param Socket $socket
      * @return bool
      */
-    public static function socketIsSuccessful($socket)
+    public static function socketIsSuccessful($socket): bool
     {
         if ($socket) {
             return $socket->isSuccessful();
@@ -644,9 +671,9 @@ class Socket
      * @param Socket $socket
      * @param string $message
      * @param array $data
-     * @return static
+     * @return ?static
      */
-    public static function socketFail($socket, $message, $data = null)
+    public static function socketFail($socket, $message, $data = null): ?static
     {
         if ($socket) {
             $socket->fail($message, $data);
@@ -660,7 +687,7 @@ class Socket
      * @param Socket $socket
      * @return bool
      */
-    public static function socketIsFailed($socket)
+    public static function socketIsFailed($socket): bool
     {
         if ($socket) {
             return $socket->isFailed();
@@ -674,9 +701,9 @@ class Socket
      * @param Socket $socket
      * @param string $message
      * @param array $data
-     * @return static
+     * @return ?static
      */
-    public static function socketCancel($socket, $message = null, $data = null)
+    public static function socketCancel($socket, $message = null, $data = null): ?static
     {
         if ($socket) {
             $socket->cancel($message, $data);
@@ -690,7 +717,7 @@ class Socket
      * @param Socket $socket
      * @return bool
      */
-    public static function socketIsCanceled($socket)
+    public static function socketIsCanceled($socket): bool
     {
         if ($socket) {
             return $socket->isCanceled();
@@ -704,9 +731,9 @@ class Socket
      * @param Socket $socket
      * @param string $message
      * @param array $data
-     * @return static
+     * @return ?static
      */
-    public static function socketDelete($socket, $message = null, $data = null)
+    public static function socketDelete($socket, $message = null, $data = null): ?static
     {
         if ($socket) {
             $socket->delete($message, $data);
@@ -720,10 +747,38 @@ class Socket
      * @param Socket $socket
      * @return bool
      */
-    public static function socketIsDeleted($socket)
+    public static function socketIsDeleted($socket): bool
     {
         if ($socket) {
             return $socket->isDeleted();
+        }
+        return false;
+    }
+
+    /**
+     * See socket.
+     *
+     * @param Socket $socket
+     * @return ?static
+     */
+    public static function socketSee($socket): ?static
+    {
+        if ($socket) {
+            $socket->see();
+        }
+        return $socket;
+    }
+
+    /**
+     * Check if socket is deleted
+     *
+     * @param Socket $socket
+     * @return bool
+     */
+    public static function socketWasSeen($socket): bool
+    {
+        if ($socket) {
+            return $socket->wasSeen();
         }
         return false;
     }
@@ -733,9 +788,9 @@ class Socket
      *
      * @param Socket $socket
      * @param string $message
-     * @return static
+     * @return ?static
      */
-    public static function socketConfirmation($socket, $message)
+    public static function socketConfirmation($socket, $message): ?static
     {
         if ($socket) {
             $socket->set('confirmation.enabled', true);
@@ -750,9 +805,9 @@ class Socket
      *
      * @param Socket $socket
      * @param string $title
-     * @return static
+     * @return ?static
      */
-    public static function socketTitle($socket, $title)
+    public static function socketTitle($socket, $title): ?static
     {
         if ($socket) {
             $socket->set('title', $title, true);
@@ -765,9 +820,9 @@ class Socket
      *
      * @param Socket $socket
      * @param string $message
-     * @return static
+     * @return ?static
      */
-    public static function socketMessage($socket, $message)
+    public static function socketMessage($socket, $message): ?static
     {
         if ($socket) {
             $socket->set('message', $message, true);
@@ -781,9 +836,9 @@ class Socket
      * @param Socket $socket
      * @param int $maximum
      * @param int $position
-     * @return static
+     * @return ?static
      */
-    public static function socketProgress($socket, $enabled, $maximum = -1, $position = 0)
+    public static function socketProgress($socket, $enabled, $maximum = -1, $position = 0): ?static
     {
         if ($socket) {
             $socket->set('progress.enabled', $enabled);
@@ -798,9 +853,9 @@ class Socket
      *
      * @param Socket $socket
      * @param int $step
-     * @return static
+     * @return ?static
      */
-    public static function socketProgressIncrease($socket, $step = 1)
+    public static function socketProgressIncrease($socket, $step = 1): ?static
     {
         if ($socket) {
             $key = 'progress.position';
@@ -814,9 +869,9 @@ class Socket
      *
      * @param Socket $socket
      * @param int $position
-     * @return static
+     * @return ?static
      */
-    public static function socketProgressPosition($socket, $position)
+    public static function socketProgressPosition($socket, $position): ?static
     {
         if ($socket) {
             $socket->set('progress.position', $position, true);

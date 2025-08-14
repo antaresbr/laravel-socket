@@ -268,17 +268,17 @@ class SocketTest extends TestCase
     }
 
     /** @test */
-    public function locale_delete_socket()
+    public function see_socket()
     {
         $socket = $this->new_socket();
-        $this->do_delete_socket($socket);
-        $this->assertEquals('Deleted from the system', $socket->get('message'));
-        
-        $this->app->setLocale('pt_BR');
-        $this->assertEquals('pt_BR', $this->app->getLocale());
+        Socket::socketSee($socket);
+        $this->assertEquals(true, $socket->get('seen'));
 
         $socket = $this->new_socket();
-        $this->do_delete_socket($socket);
-        $this->assertEquals('Excluído do sistema', $socket->get('message'));
+        Socket::socketDelete($socket);
+        $this->assertTrue($socket->isInactive());
+        Socket::socketSee($socket);
+        $this->assertTrue($socket->wasSeen());
+        $this->assertTrue($socket->get('seen'));
     }
 }
