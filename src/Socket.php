@@ -263,7 +263,7 @@ class Socket
      */
     public function saveToFile(bool $force = false, string $suffix = ''): static
     {
-        if ($force or $this->isactive()) {
+        if ($force or $this->isActive()) {
             $fileName = static::fileName($this->get('id'), $suffix);
             $dirName = dirname($fileName);
             if (!empty($dirName) and !is_dir($dirName)) {
@@ -282,7 +282,9 @@ class Socket
             }
             $data = json_encode($this->data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_NUMERIC_CHECK | JSON_PRETTY_PRINT);
             file_put_contents($fileName, $data);
-            $this->savedData = $this->data;
+            if ($suffix == '') {
+                $this->savedData = $this->data;
+            }
         }
         return $this;
     }
