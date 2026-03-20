@@ -1,4 +1,5 @@
 <?php
+
 namespace Antares\Socket;
 
 use Antares\Foundation\Arr;
@@ -6,15 +7,16 @@ use Carbon\Carbon;
 
 class Socket
 {
-    const STATUS_UNDEFINED = 'undefined';
-    const STATUS_NEW = 'new';
-    const STATUS_QUEUED = 'queued';
-    const STATUS_WAITING = 'waiting';
-    const STATUS_RUNNING = 'running';
-    const STATUS_FAILED = 'failed';
-    const STATUS_CANCELED = 'canceled';
-    const STATUS_DELETED = 'deleted';
-    const STATUS_SUCCESSFUL = 'successful';
+    public const STATUS_UNDEFINED = 'undefined';
+    public const STATUS_NEW = 'new';
+    public const STATUS_QUEUED = 'queued';
+    public const STATUS_WAITING = 'waiting';
+    public const STATUS_RUNNING = 'running';
+    public const STATUS_FAILED = 'failed';
+    public const STATUS_TIMEDOUT = 'timedout';
+    public const STATUS_CANCELED = 'canceled';
+    public const STATUS_DELETED = 'deleted';
+    public const STATUS_SUCCESSFUL = 'successful';
 
     /**
      * Socket saved data
@@ -65,7 +67,7 @@ class Socket
      *
      * @param mixed $key
      * @param mixed $value
-     * @param boolean $saveToFile
+     * @param bool $saveToFile
      * @return static
      */
     public function set($key, $value, $saveToFile = false): static
@@ -76,6 +78,7 @@ class Socket
                 $this->saveToFile();
             }
         }
+
         return $this;
     }
 
@@ -126,7 +129,7 @@ class Socket
     /**
      * Create a randomic string
      *
-     * @param integer $length
+     * @param int $length
      * @return string
      */
     public static function randomStr($length = 16): string
@@ -137,6 +140,7 @@ class Socket
         for ($i = 1; $i <= $length; $i++) {
             $rs .= substr($chars, mt_rand(0, $maxRand), 1);
         }
+
         return $rs;
     }
 
@@ -154,6 +158,7 @@ class Socket
         }
         $id = str_replace(['..', '\\', ';', '"', "'"], '', $id);
         $id = str_replace(':', DIRECTORY_SEPARATOR, $id);
+
         return config('socket.data') . DIRECTORY_SEPARATOR . $id . ($suffix ? "_{$suffix}" : '') . '.json';
     }
 
@@ -186,11 +191,11 @@ class Socket
      */
     public static function createFromId($id): static|null
     {
-        if (empty($id) or !file_exists(static::fileName($id))) {
+        if (empty($id) or ! file_exists(static::fileName($id))) {
             return null;
         }
 
-        $instance = new static;
+        $instance = new static();
         $instance->loadFromId($id);
 
         return $instance;
@@ -206,6 +211,7 @@ class Socket
     {
         $fileName = static::fileName($id ?? $this->get('id'));
         $content = file_exists($fileName) ? file_get_contents($fileName) : null;
+
         return $content ? json_decode($content, true) : null;
     }
 
@@ -220,6 +226,7 @@ class Socket
         $content = $this->loadContentFromId($id);
         $this->savedData = $content;
         $this->data = $content;
+
         return $this;
     }
 
@@ -231,6 +238,7 @@ class Socket
     public function refresh(): static
     {
         $this->loadFromId();
+
         return $this;
     }
 
@@ -266,14 +274,14 @@ class Socket
         if ($force or $this->isActive()) {
             $fileName = static::fileName($this->get('id'), $suffix);
             $dirName = dirname($fileName);
-            if (!empty($dirName) and !is_dir($dirName)) {
+            if (! empty($dirName) and ! is_dir($dirName)) {
                 mkdir($dirName, 0775, true);
                 chmod($dirName, 0775);
                 if (static::posixUserInGroup(getmyuid(), filegroup(dirname($dirName)))) {
                     chgrp($dirName, filegroup(dirname($dirName)));
                 }
             }
-            if (!is_file($fileName)) {
+            if (! is_file($fileName)) {
                 touch($fileName);
                 chmod($fileName, 0664);
                 if (static::posixUserInGroup(getmyuid(), filegroup(dirname($dirName)))) {
@@ -286,6 +294,7 @@ class Socket
                 $this->savedData = $this->data;
             }
         }
+
         return $this;
     }
 
@@ -293,12 +302,13 @@ class Socket
      * Define this socket status
      *
      * @param string $value
-     * @param boolean $save
+     * @param bool $save
      * @return static
      */
     public function status($value, $save = false): static
     {
         $this->set('status', $value, $save);
+
         return $this;
     }
 
@@ -310,9 +320,11 @@ class Socket
     public function isInactive(): bool
     {
         $id = $this->get('id');
+
         return (
             is_file(static::fileName($id, self::STATUS_DELETED)) or
             is_file(static::fileName($id, self::STATUS_FAILED)) or
+            is_file(static::fileName($id, self::STATUS_TIMEDOUT)) or
             is_file(static::fileName($id, self::STATUS_CANCELED)) or
             is_file(static::fileName($id, self::STATUS_SUCCESSFUL))
         );
@@ -325,7 +337,7 @@ class Socket
      */
     public function isActive(): bool
     {
-        return !$this->isInactive();
+        return ! $this->isInactive();
     }
 
     /**
@@ -344,21 +356,25 @@ class Socket
 
         $id = $this->get('id');
         $isDeleted = is_file(static::fileName($id, self::STATUS_DELETED));
-        
+
         if ($status == self::STATUS_DELETED) {
             return $r or $isDeleted;
         }
-        
+
         if ($status == self::STATUS_FAILED) {
-            return $r or (!$isDeleted and is_file(static::fileName($id, self::STATUS_FAILED)));
+            return $r or (! $isDeleted and is_file(static::fileName($id, self::STATUS_FAILED)));
         }
-        
+
+        if ($status == self::STATUS_TIMEDOUT) {
+            return $r or (! $isDeleted and is_file(static::fileName($id, self::STATUS_TIMEDOUT)));
+        }
+
         if ($status == self::STATUS_CANCELED) {
-            return $r or (!$isDeleted and is_file(static::fileName($id, self::STATUS_CANCELED)));
+            return $r or (! $isDeleted and is_file(static::fileName($id, self::STATUS_CANCELED)));
         }
-        
+
         if ($status == self::STATUS_SUCCESSFUL) {
-            return $r or (!$isDeleted and is_file(static::fileName($id, self::STATUS_SUCCESSFUL)));
+            return $r or (! $isDeleted and is_file(static::fileName($id, self::STATUS_SUCCESSFUL)));
         }
 
         return $r;
@@ -369,7 +385,7 @@ class Socket
      *
      * @param mixed $title
      * @param mixed $message
-     * @param boolean $save
+     * @param bool $save
      * @return static
      */
     public function start($title = null, $message = null, $save = false): static
@@ -382,6 +398,7 @@ class Socket
         }
         $this->set('started', Carbon::now()->format(config('socket.date_format')));
         $this->status(self::STATUS_RUNNING, $save);
+
         return $this;
     }
 
@@ -412,6 +429,7 @@ class Socket
             $this->saveToFile(true);
             $this->saveToFile(true, self::STATUS_SUCCESSFUL);
         }
+
         return $this;
     }
 
@@ -448,17 +466,54 @@ class Socket
             $this->saveToFile(true);
             $this->saveToFile(true, self::STATUS_FAILED);
         }
+
         return $this;
     }
 
     /**
-     * Check if socket has error
-     *
+     * Check if socket is failed
      * @return bool
      */
     public function isFailed(): bool
     {
         return $this->statusIs(self::STATUS_FAILED);
+    }
+
+    /**
+     * Define this socket as timed out
+     *
+     * @param mixed $message
+     * @param mixed $data
+     * @return static
+     */
+    public function timeout($message = null, $data = null): static
+    {
+        if ($this->isActive()) {
+            $this->set('result.error', true);
+            if ($message !== null) {
+                $this->set('result.message', $message);
+            }
+            if ($data !== null) {
+                $this->set('result.data', $data);
+            }
+            $this->set('finished', Carbon::now()->format(config('socket.date_format')));
+            $this->set('message', trans('socket::messages.timed_out'));
+            $this->status(self::STATUS_TIMEDOUT);
+            $this->saveToFile(true);
+            $this->saveToFile(true, self::STATUS_TIMEDOUT);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Check if socket is timed out
+     *
+     * @return bool
+     */
+    public function isTimedOut(): bool
+    {
+        return $this->statusIs(self::STATUS_TIMEDOUT);
     }
 
     /**
@@ -484,6 +539,7 @@ class Socket
             $this->saveToFile(true);
             $this->saveToFile(true, self::STATUS_CANCELED);
         }
+
         return $this;
     }
 
@@ -506,7 +562,7 @@ class Socket
      */
     public function delete($message = null, $data = null): static
     {
-        if (!$this->isDeleted()) {
+        if (! $this->isDeleted()) {
             if ($message !== null) {
                 $this->set('result.message', $message);
             }
@@ -519,6 +575,7 @@ class Socket
             $this->saveToFile(true);
             $this->saveToFile(true, self::STATUS_DELETED);
         }
+
         return $this;
     }
 
@@ -539,13 +596,14 @@ class Socket
      */
     public function see(): static
     {
-        if (!$this->get('seen')) {
+        if (! $this->get('seen')) {
             $this->set('seen', true);
             $this->saveToFile(true);
             if ($this->isInactive()) {
                 $this->saveToFile(true, $this->get('status'));
             }
         }
+
         return $this;
     }
 
@@ -574,6 +632,7 @@ class Socket
         if ($socket) {
             $socket->refresh();
         }
+
         return $socket;
     }
 
@@ -589,6 +648,7 @@ class Socket
         if ($socket) {
             $socket->status($status, true);
         }
+
         return $socket;
     }
 
@@ -603,6 +663,7 @@ class Socket
         if ($socket) {
             return $socket->isInactive();
         }
+
         return false;
     }
 
@@ -617,6 +678,7 @@ class Socket
         if ($socket) {
             return $socket->isActive();
         }
+
         return false;
     }
 
@@ -633,6 +695,7 @@ class Socket
         if ($socket) {
             $socket->start($title, $message, true);
         }
+
         return $socket;
     }
 
@@ -650,6 +713,7 @@ class Socket
         if ($socket) {
             $socket->successful($message, $data, $files);
         }
+
         return $socket;
     }
 
@@ -664,6 +728,7 @@ class Socket
         if ($socket) {
             return $socket->isSuccessful();
         }
+
         return false;
     }
 
@@ -680,6 +745,7 @@ class Socket
         if ($socket) {
             $socket->fail($message, $data);
         }
+
         return $socket;
     }
 
@@ -694,6 +760,39 @@ class Socket
         if ($socket) {
             return $socket->isFailed();
         }
+
+        return false;
+    }
+
+    /**
+     * Set the socket as timed out
+     *
+     * @param Socket $socket
+     * @param string $message
+     * @param array $data
+     * @return ?static
+     */
+    public static function socketTimeout($socket, $message = null, $data = null): ?static
+    {
+        if ($socket) {
+            $socket->timeout($message, $data);
+        }
+
+        return $socket;
+    }
+
+    /**
+     * Check if socket is timed out
+     *
+     * @param Socket $socket
+     * @return bool
+     */
+    public static function socketIsTimedOut($socket): bool
+    {
+        if ($socket) {
+            return $socket->isTimedOut();
+        }
+
         return false;
     }
 
@@ -710,6 +809,7 @@ class Socket
         if ($socket) {
             $socket->cancel($message, $data);
         }
+
         return $socket;
     }
 
@@ -724,6 +824,7 @@ class Socket
         if ($socket) {
             return $socket->isCanceled();
         }
+
         return false;
     }
 
@@ -740,6 +841,7 @@ class Socket
         if ($socket) {
             $socket->delete($message, $data);
         }
+
         return $socket;
     }
 
@@ -754,6 +856,7 @@ class Socket
         if ($socket) {
             return $socket->isDeleted();
         }
+
         return false;
     }
 
@@ -768,6 +871,7 @@ class Socket
         if ($socket) {
             $socket->see();
         }
+
         return $socket;
     }
 
@@ -782,6 +886,7 @@ class Socket
         if ($socket) {
             return $socket->wasSeen();
         }
+
         return false;
     }
 
@@ -799,6 +904,7 @@ class Socket
             $socket->set('confirmation.message', $message);
             $socket->status(self::STATUS_WAITING, true);
         }
+
         return $socket;
     }
 
@@ -814,6 +920,7 @@ class Socket
         if ($socket) {
             $socket->set('title', $title, true);
         }
+
         return $socket;
     }
 
@@ -829,6 +936,7 @@ class Socket
         if ($socket) {
             $socket->set('message', $message, true);
         }
+
         return $socket;
     }
 
@@ -847,6 +955,7 @@ class Socket
             $socket->set('progress.maximum', $maximum);
             $socket->set('progress.position', $position, true);
         }
+
         return $socket;
     }
 
@@ -863,6 +972,7 @@ class Socket
             $key = 'progress.position';
             $socket->set($key, $socket->get($key, 0) + $step, true);
         }
+
         return $socket;
     }
 
@@ -878,6 +988,7 @@ class Socket
         if ($socket) {
             $socket->set('progress.position', $position, true);
         }
+
         return $socket;
     }
 }

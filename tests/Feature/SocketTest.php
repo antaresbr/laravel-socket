@@ -253,6 +253,21 @@ class SocketTest extends TestCase
     }
 
     /** @test */
+    public function locale_timeout_socket()
+    {
+        $socket = $this->new_socket();
+        Socket::socketTimeout($socket, 'Timeout message', ['Timeout data']);
+        $this->assertEquals('Timed out', $socket->get('message'));
+        
+        $this->app->setLocale('pt_BR');
+        $this->assertEquals('pt_BR', $this->app->getLocale());
+
+        $socket = $this->new_socket();
+        Socket::socketTimeout($socket, 'Timeout message', ['Timeout data']);
+        $this->assertEquals('Tempo limite excedido', $socket->get('message'));
+    }
+
+    /** @test */
     public function locale_cancel_socket()
     {
         $socket = $this->new_socket();
