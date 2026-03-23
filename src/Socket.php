@@ -11,6 +11,7 @@ class Socket
     public const STATUS_NEW = 'new';
     public const STATUS_QUEUED = 'queued';
     public const STATUS_WAITING = 'waiting';
+    public const STATUS_READYTORUN = 'readytorun';
     public const STATUS_RUNNING = 'running';
     public const STATUS_FAILED = 'failed';
     public const STATUS_TIMEDOUT = 'timedout';
